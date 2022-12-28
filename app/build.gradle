@@ -1,0 +1,27 @@
+plugins {
+    // Apply the application plugin to add support for building a CLI application in Java.
+    id 'application'
+}
+
+repositories {
+    // Use Maven Central for resolving dependencies.
+    mavenCentral()
+}
+
+dependencies {
+}
+
+jar {
+    // Set the main class attribute for the manifest in the JAR file. 
+    manifest { 
+        attributes 'Main-Class': application.mainClass
+    }
+
+    // Set the name of the JAR file.
+    archiveBaseName = 'RequireCat'
+}
+
+application {
+    // Define the main class for the application.
+    mainClass = 'net.requef.requirecat.RequireCat'    
+}
