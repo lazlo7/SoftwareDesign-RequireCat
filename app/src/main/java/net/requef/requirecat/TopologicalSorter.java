@@ -7,9 +7,6 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.function.Function;
 
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 public class TopologicalSorter<T> {
     private final @NonNull Collection<T> nodes;
     private final @NonNull Function<T, Collection<T>> dependencyGetter;
@@ -28,8 +25,6 @@ public class TopologicalSorter<T> {
      * @return The sorted nodes or null if there is a circular dependency.
      */
     public @Nullable List<T> sort() {
-        hasCircularDependency = false;
-        
         final var sortedNodes = new Stack<T>();
         final Set<T> unvisitedNodes = new HashSet<T>(nodes); 
         final Set<T> visitingNodes = new HashSet<T>();
