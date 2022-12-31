@@ -7,14 +7,17 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.function.Function;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 public class TopologicalSorter<T> {
-    private final @NonNull Collection<T> nodes;
-    private final @NonNull Function<T, Collection<T>> dependencyGetter;
+    private final @NotNull Collection<T> nodes;
+    private final @NotNull Function<T, Collection<T>> dependencyGetter;
 
     private boolean hasCircularDependency = false;
 
-    public TopologicalSorter(final @NonNull Collection<T> nodes,
-                             final @NonNull Function<T, Collection<T>> dependencyGetter) {
+    public TopologicalSorter(final @NotNull Collection<T> nodes,
+                             final @NotNull Function<T, Collection<T>> dependencyGetter) {
         this.nodes = nodes;
         this.dependencyGetter = dependencyGetter;
     }
@@ -26,8 +29,8 @@ public class TopologicalSorter<T> {
      */
     public @Nullable List<T> sort() {
         final var sortedNodes = new Stack<T>();
-        final Set<T> unvisitedNodes = new HashSet<T>(nodes); 
-        final Set<T> visitingNodes = new HashSet<T>();
+        final Set<T> unvisitedNodes = new HashSet<>(nodes);
+        final Set<T> visitingNodes = new HashSet<>();
 
         while (!unvisitedNodes.isEmpty()) {
             visit(unvisitedNodes.iterator().next(), unvisitedNodes, visitingNodes, sortedNodes);
@@ -36,15 +39,15 @@ public class TopologicalSorter<T> {
         return hasCircularDependency ? null : sortedNodes;
     }
 
-    private void visit(final @NonNull T node, 
-                       final @NonNull Set<T> unvisitedNodes,
-                       final @NonNull Set<T> visitingNodes, 
-                       final @NonNull Stack<T> sortedNodes) {
+    private void visit(final @NotNull T node, 
+                       final @NotNull Set<T> unvisitedNodes,
+                       final @NotNull Set<T> visitingNodes, 
+                       final @NotNull Stack<T> sortedNodes) {
         if (hasCircularDependency) {
             return;
         }
 
-        if (!unvisitedNodes.contains(sortedNodes)) {
+        if (!unvisitedNodes.contains(node)) {
             return;
         }
 
