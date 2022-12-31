@@ -9,6 +9,8 @@ repositories {
 }
 
 dependencies {
+    // Use jetbrains annotations for @NotNull and @Nullable
+    implementation('org.jetbrains:annotations:15.0')
 }
 
 jar {
