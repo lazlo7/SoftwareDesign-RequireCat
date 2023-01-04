@@ -1,18 +1,12 @@
 package net.requef.requirecat;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Scanner;
-
-import org.jetbrains.annotations.NotNull;
+import java.util.*;
 
 public class RequireCat {
     public static void main(String[] args) {
@@ -20,7 +14,8 @@ public class RequireCat {
         // Later, the specific command line argument will be used.
         final String rootPath = "/home/requef/code/hw/software-design/lecture/2-RequireCat/app/src/test/resources/sample-root-1";
         final var rootDirectory = new File(rootPath);
-        final var fileNodes = findFiles(rootDirectory);
+        final var outputFile = new File(rootPath, "out.txt");
+        final var fileNodes = findFiles(rootDirectory, outputFile);
         printfInfo("Working with %s files%n", fileNodes.size());
 
         // Check that all dependencies have been resolved.
@@ -45,7 +40,6 @@ public class RequireCat {
         printfInfo("Starting to write to output file%n");
         // Creating output file.
         // TODO: Add output file command line argument.
-        final var outputFile = Paths.get(rootPath, "out.txt").toFile();
 
         // Output file already exists.
         if (outputFile.isFile()) {
@@ -78,9 +72,11 @@ public class RequireCat {
      * Traverses the directories in a breadth-first search manner.
      * 
      * @param rootDirectory The root directory to search for files.
+     * @param outFile The output file to be ignored to avoid infinite looping or null.
      * @return A list of file paths with their dependencies.
      */
-    private static @NotNull Map<File, List<File>> findFiles(@NotNull final File rootDirectory) {
+    private static @NotNull Map<File, List<File>> findFiles(@NotNull final File rootDirectory,
+                                                            final @Nullable File outFile) {
         if (!rootDirectory.isDirectory()) {
             throw new IllegalArgumentException("Root path is not a directory.");
         }
@@ -102,6 +98,11 @@ public class RequireCat {
                 if (subObject.isDirectory()) {
                     directoryQueue.add(subObject);
                 } else if (subObject.isFile()) {
+                    // Ignore the output file.
+                    if (subObject.equals(outFile)) {
+                        continue;
+                    }
+
                     final var files = parseFile(rootDirectory.getPath(), subObject);
                     if (files != null) {
                         fileNodes.put(subObject, files);
