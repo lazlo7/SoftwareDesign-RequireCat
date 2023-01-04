@@ -75,7 +75,7 @@ public class RequireCat {
      * @param outFile The output file to be ignored to avoid infinite looping or null.
      * @return A list of file paths with their dependencies.
      */
-    private static @NotNull Map<File, List<File>> findFiles(@NotNull final File rootDirectory,
+    private static @NotNull Map<File, List<File>> findFiles(final @NotNull File rootDirectory,
                                                             final @Nullable File outFile) {
         if (!rootDirectory.isDirectory()) {
             throw new IllegalArgumentException("Root path is not a directory.");
@@ -120,7 +120,7 @@ public class RequireCat {
      * @param rootPath The file to parse.
      * @return A FileNode with the file's dependencies.
      */
-    private static List<File> parseFile(@NotNull final String rootPath, @NotNull final File file) {
+    private static List<File> parseFile(final @NotNull  String rootPath, final @NotNull File file) {
         // TODO: Add proper require parsing and error checking.
         try (final var inputScanner = new Scanner(file)) {
             final List<File> dependencies = new ArrayList<>();
@@ -159,15 +159,15 @@ public class RequireCat {
 
     // TODO: Devise a proper logging system.
     // TODO: Add console colors.
-    private static void printfInfo(@NotNull final String format, @NotNull final Object... args) {
+    private static void printfInfo(final @NotNull String format, final @NotNull Object... args) {
         System.out.printf("[info] " + format, args);
     }
 
-    private static void printfWarning(@NotNull final String format, @NotNull final Object... args) {
+    private static void printfWarning(final @NotNull String format, final @NotNull Object... args) {
         System.out.printf("[warning] " + format, args);
     }
 
-    private static void printfError(@NotNull final String format, @NotNull final Object... args) {
+    private static void printfError(final @NotNull String format, final @NotNull Object... args) {
         System.out.printf("[error] " + format, args);
     }
 }
