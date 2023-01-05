@@ -15,35 +15,36 @@ public class RequireCat {
         final String rootPath = "/home/requef/code/hw/software-design/lecture/2-RequireCat/app/src/test/resources/sample-root-1";
         final var rootDirectory = new File(rootPath);
         final var outputFile = new File(rootPath, "out.txt");
+
+        printfInfo("Starting for root folder: '%s'%n", rootPath);
         final var fileNodes = findFiles(rootDirectory, outputFile);
-        printfInfo("Working with %s files%n", fileNodes.size());
 
         // Check that all dependencies have been resolved.
         for (final var dependencies : fileNodes.values()) {
             for (final var dependency : dependencies) {
                 if (!fileNodes.containsKey(dependency)) {
-                    printfError("File '%s' required by '%s' does not exist, skipping it.", dependency.getPath(),
+                    printfError("File '%s' required by '%s' does not exist, skipping it", dependency.getPath(),
                             dependency.getPath());
                 }
             }
         }
 
-        printfInfo("Starting topological sort%n");
+        printfInfo("Analyzed %d files, starting topological sort%n", fileNodes.size());
         final var sortedFiles = new TopologicalSorter<>(fileNodes.keySet(), fileNodes::get).sort();
         // Files contain a circular dependency.
         // TODO: Print the file and the dependency that caused the circular dependency.
         if (sortedFiles == null) {
-            printfError("Files contain a circular dependency, aborting.%n");
+            printfError("Files contain a circular dependency, aborting%n");
             return;
         }
 
-        printfInfo("Starting to write to output file%n");
+        printfInfo("Files sorted, compiling output file%n");
         // Creating output file.
         // TODO: Add output file command line argument.
 
         // Output file already exists.
         if (outputFile.isFile()) {
-            printfWarning("Output file '%s' already exists, overwriting it.%n", outputFile.getPath());
+            printfWarning("Output file '%s' already exists, overwriting it%n", outputFile.getPath());
         }
 
         try (final var outputWriter = new FileWriter(outputFile, false)) {
@@ -57,13 +58,11 @@ public class RequireCat {
             }
         } catch (final IOException e) {
             printfError("Failed to write to the output file: %s%n", e.getMessage());
-            printfError("Stacktrace: %n");
-            e.printStackTrace();
             return;
         }
 
         // TODO: Add success logging.
-        System.out.printf("[success] Output of %d files saved to %s%n", sortedFiles.size(), rootPath);
+        System.out.printf("[success] Output of %d files saved to '%s'%n", sortedFiles.size(), rootPath);
     }
 
     /**
@@ -78,7 +77,7 @@ public class RequireCat {
     private static @NotNull Map<File, List<File>> findFiles(final @NotNull File rootDirectory,
                                                             final @Nullable File outFile) {
         if (!rootDirectory.isDirectory()) {
-            throw new IllegalArgumentException("Root path is not a directory.");
+            throw new IllegalArgumentException("Root path is not a directory");
         }
 
         final var fileNodes = new HashMap<File, List<File>>();
