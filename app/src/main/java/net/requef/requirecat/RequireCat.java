@@ -114,11 +114,11 @@ public class RequireCat {
     }
 
     /**
-     * Parses the given file and returns a FileNode with the file's dependencies.
-     * 
+     * Parses the given file and returns a list of file's dependencies.
+     * Returns null if the file cannot be read.
      * @param rootPath The root path to be used to resolve relative path in 'require' statements.
      * @param file The file to parse.
-     * @return A FileNode with the file's dependencies.
+     * @return A list of files that the given file depends on or null if the file cannot be read.
      */
     private static List<File> parseFile(final @NotNull String rootPath, final @NotNull File file) {
         // TODO: Add proper require parsing and error checking.
