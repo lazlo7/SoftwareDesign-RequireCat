@@ -116,10 +116,11 @@ public class RequireCat {
     /**
      * Parses the given file and returns a FileNode with the file's dependencies.
      * 
-     * @param rootPath The file to parse.
+     * @param rootPath The root path to be used to resolve relative path in 'require' statements.
+     * @param file The file to parse.
      * @return A FileNode with the file's dependencies.
      */
-    private static List<File> parseFile(final @NotNull  String rootPath, final @NotNull File file) {
+    private static List<File> parseFile(final @NotNull String rootPath, final @NotNull File file) {
         // TODO: Add proper require parsing and error checking.
         try (final var inputScanner = new Scanner(file)) {
             final List<File> dependencies = new ArrayList<>();
@@ -129,7 +130,7 @@ public class RequireCat {
                     final var dependencyFormat = line.substring(8);
                     if (dependencyFormat.length() < 3 || !dependencyFormat.startsWith("‘")
                             || !dependencyFormat.endsWith("’")) {
-                        printfWarning("File '%s' contains an invalid require statement, skipping it.%n",
+                        printfWarning("File '%s' contains an invalid require statement, skipping the statement.%n",
                                 file.getPath());
                         continue;
                     }
