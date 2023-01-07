@@ -12,9 +12,6 @@ req
 // No whitespace - not a statement
 require
 
-// Empty statement
-require 
-
 // Missing starting ‘
 require a.txt’
 
