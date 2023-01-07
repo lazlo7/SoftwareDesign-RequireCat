@@ -12,7 +12,7 @@ public class RequireCat {
     public static void main(String[] args) {
         // TODO: For now we'll use the sample testing directory.
         // Later, the specific command line argument will be used.
-        final String rootPath = "/home/requef/code/hw/software-design/lecture/2-RequireCat/app/src/test/resources/sample-root-1";
+        final String rootPath = "/home/requef/code/hw/software-design/lecture/2-RequireCat/app/src/test/resources/root-circular-dependency";
         final var rootDirectory = new File(rootPath);
         final var outputFile = new File(rootPath, "out.txt");
 
@@ -102,7 +102,7 @@ public class RequireCat {
                         continue;
                     }
 
-                    final var files = parseFile(rootDirectory.getPath(), subObject);
+                    final var files = getFileDependencies(rootDirectory, subObject);
                     if (files != null) {
                         fileNodes.put(subObject, files);
                     }
@@ -116,38 +116,39 @@ public class RequireCat {
     /**
      * Parses the given file and returns a list of file's dependencies.
      * Returns null if the file cannot be read.
-     * @param rootPath The root path to be used to resolve relative path in 'require' statements.
+     * @param rootDirectory The root directory to be used to resolve relative path in 'require' statements.
      * @param file The file to parse.
      * @return A list of files that the given file depends on or null if the file cannot be read.
      */
-    private static List<File> parseFile(final @NotNull String rootPath, final @NotNull File file) {
-        // TODO: Add proper require parsing and error checking.
+    private static List<File> getFileDependencies(final @NotNull File rootDirectory,
+                                                  final @NotNull File file) {
         try (final var inputScanner = new Scanner(file)) {
             final List<File> dependencies = new ArrayList<>();
+            int lineNumber = 0;
+
             while (inputScanner.hasNextLine()) {
+                lineNumber++;
                 final String line = inputScanner.nextLine();
-                if (line.startsWith("require ")) {
-                    final var dependencyFormat = line.substring(8);
-                    if (dependencyFormat.length() < 3 || !dependencyFormat.startsWith("‘")
-                            || !dependencyFormat.endsWith("’")) {
-                        printfWarning("File '%s' contains an invalid require statement, skipping the statement.%n",
-                                file.getPath());
-                        continue;
-                    }
 
-                    final var dependencyFilepath = dependencyFormat.substring(1, dependencyFormat.length() - 1);
-                    final var dependencyFile = new File(rootPath, dependencyFilepath);
-
-                    if (!dependencyFile.isFile()) {
-                        // For now, we'll simply skip the file
-                        printfWarning("File '%s' required by '%s' does not exist, skipping it.%n",
-                                dependencyFile.getAbsolutePath(),
-                                file.getPath());
-                        continue;
-                    }
-
-                    dependencies.add(dependencyFile);
+                if (!line.startsWith("require ")) {
+                    continue;
                 }
+
+                final var dependencyFilePath = parseRequireStatement(line);
+                if (dependencyFilePath.isError()) {
+                    printfWarning("(%s:%d) Could not parse 'require' statement, skipping it: %s%n", file.getPath(),
+                            lineNumber, dependencyFilePath.getError());
+                    continue;
+                }
+
+                final var dependencyFile = new File(rootDirectory, dependencyFilePath.getValue());
+                if (!dependencyFile.isFile()) {
+                    printfError("(%s:%d) 'require' statement points to an invalid file, skipping it%n",
+                            file.getPath(), lineNumber);
+                    continue;
+                }
+
+                dependencies.add(dependencyFile);
             }
 
             return dependencies;
@@ -155,6 +156,41 @@ public class RequireCat {
             printfWarning("Can't read file '%s', skipping it%n", file.getPath());
             return null;
         }
+    }
+
+    /**
+     * Parses the given 'require' statement and returns the dependency's file path or an error.
+     * The given statement is already assumed to start with "require ".
+     * Returns an error if the statement is invalid.
+     * A valid require statement is of the form "require ‘path/to/file’".
+     * Note that this method does not check the existence of the defined path.
+     * @param statement The 'require' statement to parse.
+     * @return The dependency's file name or error if the statement is invalid.
+     */
+    private static @NotNull ErrorOr<String> parseRequireStatement(final @NotNull String statement) {
+        if (!statement.startsWith("require ")) {
+            throw new IllegalArgumentException("statement does not start with 'require '");
+        }
+
+        final var dependencyFormat = statement.substring(8);
+        if (dependencyFormat.isEmpty()) {
+            return ErrorOr.error("empty statement");
+        }
+
+        if (!dependencyFormat.startsWith("‘")) {
+            return ErrorOr.error("statement must start with '‘', but starts with '%s'", dependencyFormat.charAt(0));
+        }
+
+        if (!dependencyFormat.endsWith("’")) {
+            return ErrorOr.error("statement must end with '’', but ends with '%s'", dependencyFormat.charAt(dependencyFormat.length() - 1));
+        }
+
+        final var dependencyFilepath = dependencyFormat.substring(1, dependencyFormat.length() - 1);
+        if (dependencyFilepath.isEmpty()) {
+            return ErrorOr.error("empty dependency filepath");
+        }
+
+        return ErrorOr.ok(dependencyFilepath);
     }
 
     // TODO: Devise a proper logging system.

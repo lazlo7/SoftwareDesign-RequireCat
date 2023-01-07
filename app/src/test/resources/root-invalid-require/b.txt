@@ -1,0 +1,31 @@
+Hello, World!
+This is b.txt
+
+req
+
+// Escaped (with slash) - not a statement
+\require
+
+// No whitespace - not a statement
+require
+
+// Empty statement
+require
+
+// Missing starting ‘
+require a.txt’
+
+// Missing ending ‘
+require ‘a.txt
+
+// Empty file path
+require ‘’
+
+// Valid statement
+require ‘a.txt’
+
+// Valid statement, but invalid file path
+require ‘invalid/file.txt’
+
+// Valid statement, but nonexistent file
+require ‘nonexistent.txt’
