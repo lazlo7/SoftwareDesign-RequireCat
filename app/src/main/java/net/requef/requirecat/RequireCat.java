@@ -9,42 +9,44 @@ import java.io.IOException;
 import java.util.*;
 
 public class RequireCat {
+    private static final Logger logger = new Logger();
+
     public static void main(String[] args) {
         // TODO: For now we'll use the sample testing directory.
         // Later, the specific command line argument will be used.
-        final String rootPath = "/home/requef/code/hw/software-design/lecture/2-RequireCat/app/src/test/resources/root-circular-dependency";
+        final String rootPath = "/home/requef/code/hw/software-design/lecture/2-RequireCat/app/src/test/resources/root-invalid-require";
         final var rootDirectory = new File(rootPath);
         final var outputFile = new File(rootPath, "out.txt");
 
-        printfInfo("Starting for root folder: '%s'%n", rootPath);
+        logger.info("Starting for root folder: '%s'", rootPath);
         final var fileNodes = findFiles(rootDirectory, outputFile);
 
         // Check that all dependencies have been resolved.
         for (final var dependencies : fileNodes.values()) {
             for (final var dependency : dependencies) {
                 if (!fileNodes.containsKey(dependency)) {
-                    printfError("File '%s' required by '%s' does not exist, skipping it", dependency.getPath(),
+                    logger.error("File '%s' required by '%s' does not exist, skipping it", dependency.getPath(),
                             dependency.getPath());
                 }
             }
         }
 
-        printfInfo("Analyzed %d files, starting topological sort%n", fileNodes.size());
+        logger.info("Analyzed %d files, starting topological sort", fileNodes.size());
         final var sortedFiles = new TopologicalSorter<>(fileNodes.keySet(), fileNodes::get).sort();
         // Files contain a circular dependency.
         // TODO: Print the file and the dependency that caused the circular dependency.
         if (sortedFiles == null) {
-            printfError("Files contain a circular dependency, aborting%n");
+            logger.error("Files contain a circular dependency, aborting");
             return;
         }
 
-        printfInfo("Files sorted, compiling output file%n");
+        logger.info("Files sorted, compiling output file");
         // Creating output file.
         // TODO: Add output file command line argument.
 
         // Output file already exists.
         if (outputFile.isFile()) {
-            printfWarning("Output file '%s' already exists, overwriting it%n", outputFile.getPath());
+            logger.warn("Output file '%s' already exists, overwriting it", outputFile.getPath());
         }
 
         try (final var outputWriter = new FileWriter(outputFile, false)) {
@@ -57,12 +59,11 @@ public class RequireCat {
                 inputScanner.close();
             }
         } catch (final IOException e) {
-            printfError("Failed to write to the output file: %s%n", e.getMessage());
+            logger.error("Failed to write to the output file: %s", e.getMessage());
             return;
         }
 
-        // TODO: Add success logging.
-        System.out.printf("[success] Output of %d files saved to '%s'%n", sortedFiles.size(), rootPath);
+        logger.success("Output of %d files saved to '%s'", sortedFiles.size(), rootPath);
     }
 
     /**
@@ -136,14 +137,14 @@ public class RequireCat {
 
                 final var dependencyFilePath = parseRequireStatement(line);
                 if (dependencyFilePath.isError()) {
-                    printfWarning("(%s:%d) Could not parse 'require' statement, skipping it: %s%n", file.getPath(),
+                    logger.warn("(%s:%d) Could not parse 'require' statement, skipping it: %s", file.getPath(),
                             lineNumber, dependencyFilePath.getError());
                     continue;
                 }
 
                 final var dependencyFile = new File(rootDirectory, dependencyFilePath.getValue());
                 if (!dependencyFile.isFile()) {
-                    printfError("(%s:%d) 'require' statement points to an invalid file, skipping it%n",
+                    logger.error("(%s:%d) 'require' statement points to an invalid file, skipping it",
                             file.getPath(), lineNumber);
                     continue;
                 }
@@ -153,7 +154,7 @@ public class RequireCat {
 
             return dependencies;
         } catch (final IOException e) {
-            printfWarning("Can't read file '%s', skipping it%n", file.getPath());
+            logger.warn("Can't read file '%s', skipping it", file.getPath());
             return null;
         }
     }
@@ -191,19 +192,5 @@ public class RequireCat {
         }
 
         return ErrorOr.ok(dependencyFilepath);
-    }
-
-    // TODO: Devise a proper logging system.
-    // TODO: Add console colors.
-    private static void printfInfo(final @NotNull String format, final @NotNull Object... args) {
-        System.out.printf("[info] " + format, args);
-    }
-
-    private static void printfWarning(final @NotNull String format, final @NotNull Object... args) {
-        System.out.printf("[warning] " + format, args);
-    }
-
-    private static void printfError(final @NotNull String format, final @NotNull Object... args) {
-        System.out.printf("[error] " + format, args);
     }
 }
