@@ -25,8 +25,9 @@ public class RequireCat {
         for (final var dependencies : fileNodes.values()) {
             for (final var dependency : dependencies) {
                 if (!fileNodes.containsKey(dependency)) {
-                    logger.error("File '%s' required by '%s' does not exist, skipping it", dependency.getPath(),
+                    exitWithError("File '%s' required by '%s' does not exist", dependency.getPath(),
                             dependency.getPath());
+                    return;
                 }
             }
         }
@@ -36,7 +37,7 @@ public class RequireCat {
         // Files contain a circular dependency.
         // TODO: Print the file and the dependency that caused the circular dependency.
         if (sortedFiles == null) {
-            logger.error("Files contain a circular dependency, aborting");
+            exitWithError("Files contain a circular dependency");
             return;
         }
 
@@ -59,7 +60,7 @@ public class RequireCat {
                 inputScanner.close();
             }
         } catch (final IOException e) {
-            logger.error("Failed to write to the output file: %s", e.getMessage());
+            exitWithError("Failed to write to the output file: %s", e.getMessage());
             return;
         }
 
@@ -144,9 +145,9 @@ public class RequireCat {
 
                 final var dependencyFile = new File(rootDirectory, dependencyFilePath.getValue());
                 if (!dependencyFile.isFile()) {
-                    logger.error("(%s:%d) 'require' statement points to an invalid file, skipping it",
+                    exitWithError("(%s:%d) 'require' statement points to an invalid file",
                             file.getPath(), lineNumber);
-                    continue;
+                    return null;
                 }
 
                 dependencies.add(dependencyFile);
@@ -192,5 +193,10 @@ public class RequireCat {
         }
 
         return ErrorOr.ok(dependencyFilepath);
+    }
+
+    private static void exitWithError(final @NotNull String message, final @NotNull Object... args) {
+        logger.error(message + ", aborting", args);
+        System.exit(1);
     }
 }
