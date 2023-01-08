@@ -51,7 +51,6 @@ public class RequireCat {
         final var fileNodes = findFiles(rootDirectory, outputFile);
 
         // Check that all dependencies have been resolved.
-        // TODO: Could remove this check because it's already handled in findFiles?
         for (final var dependencies : fileNodes.values()) {
             for (final var dependency : dependencies) {
                 if (!fileNodes.containsKey(dependency)) {
