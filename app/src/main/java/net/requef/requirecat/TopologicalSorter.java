@@ -6,12 +6,22 @@ import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Depth-first search topological sorter.
+ * @param <T> type of the nodes (should have a well-defined hashCode() method)
+ */
 public class TopologicalSorter<T> {
     private final Collection<T> nodes;
     private final Function<T, Collection<T>> dependencyGetter;
 
     private List<T> cycle;
 
+    /**
+     * Constructs a new topological sorter.
+     * Note that the type of the nodes should have a well-defined hashCode() method.
+     * @param nodes the nodes to sort
+     * @param dependencyGetter a function that returns the dependencies of a node
+     */
     public TopologicalSorter(final @NotNull Collection<T> nodes,
                              final @NotNull Function<T, Collection<T>> dependencyGetter) {
         this.nodes = nodes;
@@ -25,7 +35,6 @@ public class TopologicalSorter<T> {
      */
     public @Nullable List<T> sort() {
         final var sortedNodes = new Stack<T>();
-        // TODO: nodes should not really depend on the hashCode method of T.
         final Set<T> unvisitedNodes = new HashSet<>(nodes);
         final Set<T> visitingNodes = new HashSet<>();
 
@@ -54,7 +63,6 @@ public class TopologicalSorter<T> {
         }
 
         if (visitingNodes.contains(node)) {
-            // TODO: cycle is just a copy of visitingNodes, maybe we can just return it.
             cycle = new ArrayList<>(visitingNodes);
             return;
         }
