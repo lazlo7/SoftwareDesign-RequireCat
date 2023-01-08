@@ -90,8 +90,6 @@ public class RequireCat {
         }
 
         logger.info("Files sorted, compiling output file");
-        // Creating output file.
-        // TODO: Add output file command line argument.
 
         // Output file already exists.
         if (outputFile.isFile()) {
