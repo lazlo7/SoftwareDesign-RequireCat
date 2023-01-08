@@ -1,6 +1,0 @@
-This is 2.txt
-
-abc
-// Should work
-require ‘2/4.txt’
-def

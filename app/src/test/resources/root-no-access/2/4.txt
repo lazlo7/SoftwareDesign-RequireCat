@@ -1,3 +1,0 @@
-This is 4.txt
-Hello
-EOF
