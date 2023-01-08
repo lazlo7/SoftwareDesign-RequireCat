@@ -69,6 +69,11 @@ public class RequireCat {
         logger.success("Output of %d files saved to '%s'", sortedFiles.size(), rootPath);
     }
 
+    /**
+     * Checks that all dependencies have been resolved.
+     * Exits with an error if any dependency is missing.
+     * @param fileNodes The map of file nodes.
+     */
     private static void assertDependenciesResolved(final @NotNull Map<File, List<File>> fileNodes) {
         for (final var dependencies : fileNodes.values()) {
             for (final var dependency : dependencies) {
@@ -81,6 +86,12 @@ public class RequireCat {
         }
     }
 
+    /**
+     * Logs the cycle (a circular dependency) that was found in the dependency graph.
+     * This method assumes that such cycle exists.
+     * @param sorter The sorter that found the cycle.
+     * @param <T> The type of the nodes in the graph.
+     */
     private static <T> void logCycle(final @NotNull TopologicalSorter<T> sorter) {
         final var cycle = sorter.getCycle();
         assert cycle != null && !cycle.isEmpty();
@@ -103,6 +114,11 @@ public class RequireCat {
         exitWithError(stringBuilder.toString());
     }
 
+    /**
+     * Writes the result of topologically sorted files into the output file.
+     * @param outputFile The output file.
+     * @param sortedFiles The sorted files.
+     */
     private static void writeOutputFile(final @NotNull File outputFile,
                                         final @NotNull List<File> sortedFiles) {
         // Output file already exists.
@@ -124,6 +140,11 @@ public class RequireCat {
         }
     }
 
+    /**
+     * Checks if the given path is valid.
+     * @param path The path to check.
+     * @return True if the path is valid, false otherwise.
+     */
     private static boolean isValidPath(final @NotNull String path) {
         try {
             Paths.get(path);
@@ -133,6 +154,9 @@ public class RequireCat {
         return true;
     }
 
+    /**
+     * Prints the usage message of the program.
+     */
     private static void printUsage() {
         System.out.println("Usage: java -jar RequireCat.jar <root_directory> [-q] [-o=<output_file>]");
         System.out.println("Options:");
@@ -268,6 +292,11 @@ public class RequireCat {
         return ErrorOr.ok(dependencyFilepath);
     }
 
+    /**
+     * Immediately exits the program with an error log.
+     * @param message The error message.
+     * @param args The arguments to be formatted into the message.
+     */
     private static void exitWithError(final @NotNull String message, final @NotNull Object... args) {
         logger.error(message + ", aborting", args);
         System.exit(1);
