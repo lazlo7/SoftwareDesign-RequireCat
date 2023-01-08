@@ -14,6 +14,7 @@ public class RequireCat {
     private static final Logger logger = new Logger();
 
     public static void main(String[] args) {
+        // Parsing arguments.
         if (args.length == 0) {
             printUsage();
             exitWithError("At least one argument is required");
@@ -51,6 +52,24 @@ public class RequireCat {
         final var fileNodes = findFiles(rootDirectory, outputFile);
 
         // Check that all dependencies have been resolved.
+        assertDependenciesResolved(fileNodes);
+
+        logger.info("Analyzed %d files, starting topological sort", fileNodes.size());
+        final var sorter = new TopologicalSorter<>(fileNodes.keySet(), fileNodes::get);
+        final var sortedFiles = sorter.sort();
+
+        // Files contain a circular dependency.
+        if (sortedFiles == null) {
+            logCycle(sorter);
+            return;
+        }
+
+        logger.info("Files sorted, compiling output file");
+        writeOutputFile(outputFile, sortedFiles);
+        logger.success("Output of %d files saved to '%s'", sortedFiles.size(), rootPath);
+    }
+
+    private static void assertDependenciesResolved(final @NotNull Map<File, List<File>> fileNodes) {
         for (final var dependencies : fileNodes.values()) {
             for (final var dependency : dependencies) {
                 if (!fileNodes.containsKey(dependency)) {
@@ -60,36 +79,32 @@ public class RequireCat {
                 }
             }
         }
+    }
 
-        logger.info("Analyzed %d files, starting topological sort", fileNodes.size());
-        final var sorter = new TopologicalSorter<>(fileNodes.keySet(), fileNodes::get);
-        final var sortedFiles = sorter.sort();
-        // Files contain a circular dependency.
-        if (sortedFiles == null) {
-            final var cycle = sorter.getCycle();
-            assert cycle != null && !cycle.isEmpty();
+    private static <T> void logCycle(final @NotNull TopologicalSorter<T> sorter) {
+        final var cycle = sorter.getCycle();
+        assert cycle != null && !cycle.isEmpty();
 
-            final var stringBuilder = new StringBuilder();
-            stringBuilder.append("Files contain a circular dependency:%n");
-            stringBuilder.append(cycle.get(0));
-            stringBuilder.append("%n");
+        final var stringBuilder = new StringBuilder();
+        stringBuilder.append("Files contain a circular dependency:%n");
+        stringBuilder.append(cycle.get(0));
+        stringBuilder.append("%n");
 
-            for (int i = 1; i < cycle.size(); i++) {
-                stringBuilder.append("\t<- ");
-                stringBuilder.append(cycle.get(i));
-                stringBuilder.append("%n");
-            }
-
+        for (int i = 1; i < cycle.size(); i++) {
             stringBuilder.append("\t<- ");
-            stringBuilder.append(cycle.get(0));
-            stringBuilder.append("%n\t<- ...");
-
-            logger.error(stringBuilder.toString());
-            System.exit(1);
+            stringBuilder.append(cycle.get(i));
+            stringBuilder.append("%n");
         }
 
-        logger.info("Files sorted, compiling output file");
+        stringBuilder.append("\t<- ");
+        stringBuilder.append(cycle.get(0));
+        stringBuilder.append("%n\t<- ...");
 
+        exitWithError(stringBuilder.toString());
+    }
+
+    private static void writeOutputFile(final @NotNull File outputFile,
+                                        final @NotNull List<File> sortedFiles) {
         // Output file already exists.
         if (outputFile.isFile()) {
             logger.warn("Output file '%s' already exists, overwriting it", outputFile.getPath());
@@ -106,10 +121,7 @@ public class RequireCat {
             }
         } catch (final IOException e) {
             exitWithError("Failed to write to the output file: %s", e.getMessage());
-            return;
         }
-
-        logger.success("Output of %d files saved to '%s'", sortedFiles.size(), rootPath);
     }
 
     private static boolean isValidPath(final @NotNull String path) {
