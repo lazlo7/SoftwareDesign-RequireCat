@@ -6,19 +6,47 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class RequireCat {
     private static final Logger logger = new Logger();
 
     public static void main(String[] args) {
-        // TODO: Add quiet mode (only log warnings and errors).
-        // TODO: For now we'll use the sample testing directory.
-        // Later, the specific command line argument will be used.
-        final String rootPath = "/home/requef/code/hw/software-design/lecture/2-RequireCat/app/src/test/resources/root-circular-dependency";
-        final var rootDirectory = new File(rootPath);
-        final var outputFile = new File(rootPath, "out.txt");
+        if (args.length == 0) {
+            printUsage();
+            exitWithError("At least one argument is required");
+            return;
+        }
 
+        final var rootPath = args[0];
+        final var rootDirectory = new File(rootPath);
+        if (!rootDirectory.isDirectory()) {
+            exitWithError("'%s' is not a valid directory", rootPath);
+            return;
+        }
+
+        boolean isQuietMode = false;
+        var outputFile = new File(rootDirectory, "out.txt");
+        for (int i = 1; i < args.length; ++i) {
+            if ("-q".equals(args[i])) {
+                isQuietMode = true;
+            } else if (args[i].startsWith("-o=")) {
+                final var outputFilePath = args[i].substring(3);
+                if (outputFilePath.isEmpty() || !isValidPath(outputFilePath)) {
+                    exitWithError("'%s' is not a valid path", outputFilePath);
+                    return;
+                }
+                outputFile = new File(rootDirectory, outputFilePath);
+            } else {
+                printUsage();
+                exitWithError("Unrecognised argument: '%s'", args[i]);
+                return;
+            }
+        }
+
+        logger.setLogLevel(isQuietMode ? LogLevel.WARN : LogLevel.INFO);
         logger.info("Starting for root folder: '%s'", rootPath);
         final var fileNodes = findFiles(rootDirectory, outputFile);
 
@@ -85,6 +113,22 @@ public class RequireCat {
         }
 
         logger.success("Output of %d files saved to '%s'", sortedFiles.size(), rootPath);
+    }
+
+    private static boolean isValidPath(final @NotNull String path) {
+        try {
+            Paths.get(path);
+        } catch (InvalidPathException | NullPointerException ignored) {
+            return false;
+        }
+        return true;
+    }
+
+    private static void printUsage() {
+        System.out.println("Usage: java -jar RequireCat.jar <root_directory> [-q] [-o=<output_file>]");
+        System.out.println("Options:");
+        System.out.println("\t-q\tQuiet mode. Only log warnings and errors.");
+        System.out.println("\t-o\tOutput file. If not specified, the output will be saved to 'out.txt'.");
     }
 
     /**
