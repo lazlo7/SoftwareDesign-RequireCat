@@ -12,9 +12,10 @@ public class RequireCat {
     private static final Logger logger = new Logger();
 
     public static void main(String[] args) {
+        // TODO: Add quiet mode (only log warnings and errors).
         // TODO: For now we'll use the sample testing directory.
         // Later, the specific command line argument will be used.
-        final String rootPath = "/home/requef/code/hw/software-design/lecture/2-RequireCat/app/src/test/resources/root-invalid-require";
+        final String rootPath = "/home/requef/code/hw/software-design/lecture/2-RequireCat/app/src/test/resources/root-circular-dependency";
         final var rootDirectory = new File(rootPath);
         final var outputFile = new File(rootPath, "out.txt");
 
@@ -22,6 +23,7 @@ public class RequireCat {
         final var fileNodes = findFiles(rootDirectory, outputFile);
 
         // Check that all dependencies have been resolved.
+        // TODO: Could remove this check because it's already handled in findFiles?
         for (final var dependencies : fileNodes.values()) {
             for (final var dependency : dependencies) {
                 if (!fileNodes.containsKey(dependency)) {
@@ -33,12 +35,30 @@ public class RequireCat {
         }
 
         logger.info("Analyzed %d files, starting topological sort", fileNodes.size());
-        final var sortedFiles = new TopologicalSorter<>(fileNodes.keySet(), fileNodes::get).sort();
+        final var sorter = new TopologicalSorter<>(fileNodes.keySet(), fileNodes::get);
+        final var sortedFiles = sorter.sort();
         // Files contain a circular dependency.
-        // TODO: Print the file and the dependency that caused the circular dependency.
         if (sortedFiles == null) {
-            exitWithError("Files contain a circular dependency");
-            return;
+            final var cycle = sorter.getCycle();
+            assert cycle != null && !cycle.isEmpty();
+
+            final var stringBuilder = new StringBuilder();
+            stringBuilder.append("Files contain a circular dependency:%n");
+            stringBuilder.append(cycle.get(0));
+            stringBuilder.append("%n");
+
+            for (int i = 1; i < cycle.size(); i++) {
+                stringBuilder.append("\t<- ");
+                stringBuilder.append(cycle.get(i));
+                stringBuilder.append("%n");
+            }
+
+            stringBuilder.append("\t<- ");
+            stringBuilder.append(cycle.get(0));
+            stringBuilder.append("%n\t<- ...");
+
+            logger.error(stringBuilder.toString());
+            System.exit(1);
         }
 
         logger.info("Files sorted, compiling output file");

@@ -1,20 +1,16 @@
 package net.requef.requirecat;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.Stack;
+import java.util.*;
 import java.util.function.Function;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class TopologicalSorter<T> {
-    private final @NotNull Collection<T> nodes;
-    private final @NotNull Function<T, Collection<T>> dependencyGetter;
+    private final Collection<T> nodes;
+    private final Function<T, Collection<T>> dependencyGetter;
 
-    private boolean hasCircularDependency = false;
+    private List<T> cycle;
 
     public TopologicalSorter(final @NotNull Collection<T> nodes,
                              final @NotNull Function<T, Collection<T>> dependencyGetter) {
@@ -29,37 +25,46 @@ public class TopologicalSorter<T> {
      */
     public @Nullable List<T> sort() {
         final var sortedNodes = new Stack<T>();
+        // TODO: nodes should not really depend on the hashCode method of T.
         final Set<T> unvisitedNodes = new HashSet<>(nodes);
         final Set<T> visitingNodes = new HashSet<>();
 
         while (!unvisitedNodes.isEmpty()) {
             visit(unvisitedNodes.iterator().next(), unvisitedNodes, visitingNodes, sortedNodes);
         }
-        
-        return hasCircularDependency ? null : sortedNodes;
+
+        return cycle == null ? sortedNodes : null;
+    }
+
+    /**
+     * Returns some cycle (a circular dependency) in the graph if there are any or null.
+     *
+     * @return A cycle or null.
+     */
+    public @Nullable List<T> getCycle() {
+        return cycle;
     }
 
     private void visit(final @NotNull T node, 
                        final @NotNull Set<T> unvisitedNodes,
                        final @NotNull Set<T> visitingNodes, 
                        final @NotNull Stack<T> sortedNodes) {
-        if (hasCircularDependency) {
-            return;
-        }
-
         if (!unvisitedNodes.contains(node)) {
             return;
         }
 
         if (visitingNodes.contains(node)) {
-            hasCircularDependency = true;
+            // TODO: cycle is just a copy of visitingNodes, maybe we can just return it.
+            cycle = new ArrayList<>(visitingNodes);
             return;
         }
 
         visitingNodes.add(node);
 
         for (final var dependency : dependencyGetter.apply(node)) {
-            visit(dependency, unvisitedNodes, visitingNodes, sortedNodes);
+            if (cycle == null) {
+                visit(dependency, unvisitedNodes, visitingNodes, sortedNodes);
+            }
         }
 
         visitingNodes.remove(node);
